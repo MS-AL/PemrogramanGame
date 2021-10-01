@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public GameObject Projectile;
+    public Vector2 projectileVelocity;
+    public Vector2 projectileOffset;
+    public float cooldown = 0.5f;
+    bool isCanShoot = true;
     bool isJump = true;
     bool isDead = false;
         int idMove = 0;
@@ -13,6 +18,8 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         anim = GetComponent<Animator>();
+        isCanShoot = false;
+        EnemyController.EnemyKilled = 0;
     }
 
     // Update is called once per frame
@@ -33,8 +40,18 @@ public class PlayerController : MonoBehaviour
         if(Input.GetKeyUp(KeyCode.RightArrow)){
             Idle();
         }
+        if(Input.GetKeyDown(KeyCode.Z)){
+            Fire();
+        }
         Move();
         Dead();
+    }
+    IEnumerator CanShoot()
+    {
+        anim.SetTrigger("shoot");
+        isCanShoot = false;
+        yield return new WaitForSeconds(cooldown);
+        isCanShoot = true;
     }
     private void OnCollisionStay2D(Collision2D collision)
     {
@@ -50,6 +67,24 @@ public class PlayerController : MonoBehaviour
         anim.SetTrigger("Run");
         anim.SetTrigger("Idle");
         isJump = true;
+    }
+    private void OnCollisisionEnter2D(Collision2D collision)
+    {
+        if(collision.transform.tag.Equals("Peluru"))
+        {
+            isCanShoot = true;
+        }
+        if(collision.transform.tag.Equals("Enemy"))
+        {
+            //SceneManager.LoadScene("Game Over")
+            isDead = true;
+        }
+    }
+    private void OnTriggerEnter2D(Collider2D collision){
+        if (collision.transform.tag.Equals("Coin")){
+            Data.score += 15;
+            Destroy(collision.gameObject);
+        }
     }
     public void MoveRight()
     {
@@ -78,11 +113,6 @@ public class PlayerController : MonoBehaviour
             gameObject.GetComponent<Rigidbody2D>().AddForce(Vector2.up * 300f);
         }
     }
-    private void OnTriggerEnter2D(Collider2D collision){
-        if (collision.transform.tag.Equals("Coin")){
-            Destroy(collision.gameObject);
-        }
-    }
     public void Idle(){
         if (!isJump){
             anim.ResetTrigger("Jump");
@@ -96,6 +126,24 @@ public class PlayerController : MonoBehaviour
             if (transform.position.y < -10f){
                 isDead = true;
             }
+        }
+    }
+    void Fire()
+    {
+        if (isCanShoot)
+        {
+            GameObject bullet = Instantiate(Projectile, (Vector2)transform.position - 
+                projectileOffset * transform.localScale.x, Quaternion.identity);
+
+            Vector2 velocity = new Vector2 (projectileVelocity.x * 
+                transform.localScale.x, projectileVelocity.y);
+                bullet.GetComponent<Rigidbody>().velocity = velocity * -1;
+
+            Vector3 scale = transform.localScale;
+            bullet.transform.localScale = scale * -1;
+
+            StartCoroutine(CanShoot());
+            anim.SetTrigger("shoot");
         }
     }
 }
