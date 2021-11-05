@@ -1,0 +1,5 @@
+sceneSetups:
+- path: C:/Users/acer nitro/Downloads/Compressed/unity-ads-master/Assets/Test.unity
+  isLoaded: 1
+  isActive: 1
+  isSubScene: 0
